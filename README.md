@@ -176,6 +176,3 @@ User input (plain text)
 
 ---
 
-## License
-
-MIT
