@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GoalPulse — AI Goal Tracker</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div class="page-shell">
+
+      <!-- Header -->
+      <header class="hero">
+        <div class="hero-copy-block">
+          <p class="eyebrow">AI-Powered Goal Tracker</p>
+          <h1>GoalPulse<span class="hero-dot">.</span></h1>
+          <p class="hero-copy">
+            Log tasks, habits, and events in plain English. The ML pipeline classifies your intent, tracks your focus, and tells you when you're drifting.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode" aria-label="Toggle theme">
+            <span class="theme-icon">☀️</span>
+          </button>
+          <div class="mini-stat">
+            <span>High Priority Open</span>
+            <strong id="highPriorityOpenCount" class="skeleton-inline">—</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Total Items</span>
+            <strong id="entryCount" class="skeleton-inline">—</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard-grid">
+
+        <!-- Calendar -->
+        <section class="panel calendar-panel">
+          <div class="section-title compact-title">
+            <div>
+              <h2 id="monthLabel">Loading…</h2>
+              <p>Monthly calendar — item count per day.</p>
+            </div>
+            <div class="today-progress">
+              <span>Today</span>
+              <strong id="todayProgress">— / — done</strong>
+            </div>
+          </div>
+          <div class="calendar-weekdays">
+            <span>Sun</span><span>Mon</span><span>Tue</span>
+            <span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div id="calendarGrid" class="calendar-grid skeleton-grid"></div>
+        </section>
+
+        <!-- Composer -->
+        <section class="panel composer-panel">
+          <div class="section-title">
+            <h2>Add Item</h2>
+            <p>Tasks are for today. Events need a schedule. Habits repeat automatically.</p>
+          </div>
+          <form id="itemForm" class="item-form">
+            <div class="form-grid">
+              <label>
+                Type
+                <select id="itemKind" name="itemKind">
+                  <option value="TASK">TASK</option>
+                  <option value="HABIT">HABIT</option>
+                  <option value="EVENT">EVENT</option>
+                </select>
+              </label>
+              <label id="priorityField">
+                Priority
+                <select id="priority" name="priority">
+                  <option value="high">High</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </label>
+              <label class="full-span">
+                Title
+                <input id="title" name="title" type="text" placeholder="Revise OS notes before exam…" autocomplete="off">
+              </label>
+              <label class="full-span">
+                Notes
+                <textarea id="details" name="details" rows="3" placeholder="Optional details or context"></textarea>
+              </label>
+              <label id="dateField" style="display:none">
+                Event Date
+                <input id="scheduledDate" name="scheduledDate" type="date">
+              </label>
+              <label id="timeField" style="display:none">
+                Event Time
+                <input id="scheduledTime" name="scheduledTime" type="time">
+              </label>
+              <label id="repeatField" style="display:none">
+                Frequency
+                <select id="repeatFrequency" name="repeatFrequency">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </label>
+            </div>
+            <button type="submit" class="primary-button" id="submitBtn">
+              <span id="submitLabel">Save Item</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- AI Score Panel -->
+        <section class="panel score-panel">
+          <div class="section-title">
+            <h2>AI Insight Scores</h2>
+            <p>Stability, drift, deviation, and streak — computed from your weekly activity.</p>
+          </div>
+          <div class="score-orbit">
+            <article id="stabilityRing" class="score-ring score-stability">
+              <div class="score-ring-core">
+                <span>Stability</span>
+                <strong id="stabilityScore">0</strong>
+              </div>
+            </article>
+            <article id="driftRing" class="score-ring score-drift">
+              <div class="score-ring-core">
+                <span>Drift</span>
+                <strong id="driftScore">0</strong>
+              </div>
+            </article>
+            <article id="deviationRing" class="score-ring score-deviation">
+              <div class="score-ring-core">
+                <span>Deviation</span>
+                <strong id="deviationScore">0</strong>
+              </div>
+            </article>
+            <article id="streakRing" class="score-ring score-streak">
+              <div class="score-ring-core">
+                <span>Streak 🔥</span>
+                <strong id="streakScore">0</strong>
+              </div>
+            </article>
+          </div>
+          <div class="summary-box">
+            <div class="summary-row">
+              <span class="summary-label">Primary intent</span>
+              <strong id="primaryIntent" class="category-badge">—</strong>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Active focus</span>
+              <strong id="activeGoal">No focus item</strong>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Recommendation</span>
+              <strong id="recommendation">—</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Today -->
+        <section class="panel today-panel">
+          <div class="section-title">
+            <h2>Today</h2>
+            <p>Open tasks and habits due today.</p>
+          </div>
+          <div id="todayList" class="planner-list empty-state">No items for today.</div>
+        </section>
+
+        <!-- Completed -->
+        <section class="panel completed-panel">
+          <div class="section-title">
+            <h2>Completed</h2>
+            <p>Recently completed items. Uncheck to revert.</p>
+          </div>
+          <div id="completedList" class="planner-list empty-state">No completed items yet.</div>
+        </section>
+
+        <!-- Habits -->
+        <section class="panel habits-panel">
+          <div class="section-title">
+            <h2>Habits</h2>
+            <p>Repeating routines tracked daily, weekly, or monthly.</p>
+          </div>
+          <div id="habitList" class="planner-list empty-state">No habits yet.</div>
+        </section>
+
+        <!-- Events -->
+        <section class="panel events-panel">
+          <div class="section-title">
+            <h2>Upcoming Events</h2>
+            <p>Scheduled commitments with date and time.</p>
+          </div>
+          <div id="eventList" class="planner-list empty-state">No events scheduled.</div>
+        </section>
+
+        <!-- Deviation Alerts -->
+        <section class="panel alerts-panel">
+          <div class="section-title">
+            <h2>Deviation Alerts</h2>
+            <p>Triggered when a logged item conflicts with your primary focus category.</p>
+          </div>
+          <div id="alertsList" class="stack-list empty-state">No alerts yet.</div>
+        </section>
+
+        <!-- Chart.js Weekly Chart -->
+        <section class="panel chart-panel">
+          <div class="section-title chart-header">
+            <div>
+              <h2>Past 7 Days</h2>
+              <p>Task completion rate per day — bars show entered vs completed.</p>
+            </div>
+            <div class="chart-legend" id="chartLegend">
+              <span class="legend-item"><i class="legend-dot" style="background:var(--green)"></i>Completed</span>
+              <span class="legend-item"><i class="legend-dot" style="background:var(--border-strong)"></i>Entered</span>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="weeklyChart" height="90"></canvas>
+          </div>
+        </section>
+
+        <!-- AI Insights -->
+        <section class="panel insights-panel">
+          <div class="section-title">
+            <h2>AI Insights</h2>
+            <p>Generated from your category patterns, completion rate, and activity sentiment.</p>
+          </div>
+          <div class="insights-grid">
+            <div class="insight-card">
+              <h4>Summary</h4>
+              <p id="insightSummary" class="insight-text">—</p>
+            </div>
+            <div class="insight-card">
+              <h4>Suggestions</h4>
+              <ul id="suggestionsList" class="insight-list"></ul>
+            </div>
+            <div class="insight-card">
+              <h4>What to Improve</h4>
+              <ul id="improvementsList" class="insight-list"></ul>
+            </div>
+            <div class="insight-card sentiment-card">
+              <h4>Activity Sentiment</h4>
+              <div id="sentimentDisplay" class="sentiment-display">
+                <div class="sentiment-row">
+                  <span>Polarity</span>
+                  <div class="sentiment-bar-wrap">
+                    <div class="sentiment-bar" id="polarityBar"></div>
+                  </div>
+                  <span id="polarityVal">—</span>
+                </div>
+                <div class="sentiment-row">
+                  <span>Subjectivity</span>
+                  <div class="sentiment-bar-wrap">
+                    <div class="sentiment-bar subjectivity" id="subjectivityBar"></div>
+                  </div>
+                  <span id="subjectivityVal">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
